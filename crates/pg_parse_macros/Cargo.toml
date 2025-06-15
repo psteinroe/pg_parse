@@ -1,0 +1,27 @@
+[package]
+name                 = "pg_parse_macros"
+authors.workspace    = true
+categories.workspace = true
+description          = "PostgreSQL parser library for Rust"
+edition.workspace    = true
+homepage.workspace   = true
+keywords.workspace   = true
+license.workspace    = true
+repository.workspace = true
+version              = "0.0.0"
+
+[dependencies]
+proc-macro2.workspace = true
+quote.workspace       = true
+
+pg_proto_parser.workspace = true
+
+[lib]
+proc-macro = true
+
+[build-dependencies]
+ureq = "2.9"
+
+
+
+

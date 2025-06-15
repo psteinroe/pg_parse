@@ -1,0 +1,28 @@
+[package]
+name                 = "pg_parse"
+authors.workspace    = true
+categories.workspace = true
+description          = "PostgreSQL parser library for Rust"
+edition.workspace    = true
+homepage.workspace   = true
+keywords.workspace   = true
+license.workspace    = true
+repository.workspace = true
+version              = "0.0.0"
+
+
+[dependencies]
+thiserror = { workspace = true }
+prost = { workspace = true }
+
+pg_parse_macros = { workspace = true }
+
+
+[build-dependencies]
+bindgen = "0.72.0"
+prost-build = "0.13.5"
+fs_extra = "1.2.0"
+cc = "1.0.83"
+glob = "0.3.1"
+clippy = { version = "0.0.302", optional = true }
+

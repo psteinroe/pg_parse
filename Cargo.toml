@@ -1,0 +1,25 @@
+[workspace]
+members  = ["crates/*"]
+resolver = "2"
+
+[workspace.package]
+authors      = ["Supabase Communnity"]
+categories   = ["development-tools", "postgres", "supabase"]
+edition      = "2021"
+homepage     = "https://supabase.com/"
+keywords     = ["postgres", "libpg_query"]
+license      = "MIT"
+repository   = "https://github.com/psteinroe/pg_parse"
+rust-version = "1.86.0"
+
+[workspace.dependencies]
+thiserror = "1.0.31"
+prost = "0.13.5"
+proc-macro2              = "1.0.66"
+quote                    = "1.0.33"
+
+pg_parse                = { path = "./crates/pg_parse", version = "0.0.0" }
+pg_parse_macros                = { path = "./crates/pg_parse_macros", version = "0.0.0" }
+pg_proto_parser                = { path = "./crates/pg_proto_parser", version = "0.0.0" }
+
+

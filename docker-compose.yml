@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  pg-parse-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pg-parse-dev
+    volumes:
+      # Mount the entire project directory
+      - .:/workspace
+      # Mount cargo registry cache to speed up builds
+      - cargo-registry:/home/developer/.cargo/registry
+      - cargo-git:/home/developer/.cargo/git
+      # Mount target directory separately to avoid conflicts
+      - cargo-target:/workspace/target
+    working_dir: /workspace
+    environment:
+      # Rust environment
+      CARGO_HOME: /home/developer/.cargo
+      RUSTUP_HOME: /home/developer/.rustup
+      # Emscripten environment
+      EMSDK: /emsdk
+      EM_CONFIG: /emsdk/.emscripten
+    command: /bin/bash
+    stdin_open: true
+    tty: true
+
+volumes:
+  cargo-registry:
+  cargo-git:
+  cargo-target:

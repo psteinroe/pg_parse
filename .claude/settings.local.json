@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rm:*)",
+      "Bash(cargo clean:*)",
+      "Bash(cargo:*)",
+      "Bash(rustup target:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(rg:*)",
+      "Bash(chmod:*)"
+    ],
+    "deny": []
+  }
+}

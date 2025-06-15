@@ -1,0 +1,5 @@
+- setup a better build env using e.g. docker or nix to not require local emsdk installation etc
+- properly parse stderr and return result
+- assume we are parsing a single sql statement and return only the root node
+- add a nodes() method and other iter helpers to ast
+- explore ways to make lexer directly return SyntaxKind struct

@@ -1,0 +1,45 @@
+# Multi-stage Dockerfile for smaller production images
+
+# Build stage
+FROM emscripten/emsdk:3.1.46 as builder
+
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    git \
+    build-essential \
+    pkg-config \
+    libssl-dev \
+    protobuf-compiler \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Rust
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+# Add wasm32-unknown-emscripten target
+RUN rustup target add wasm32-unknown-emscripten
+
+# Set working directory
+WORKDIR /build
+
+# Copy the project files
+COPY . /build
+
+# Build the project
+RUN cargo build --release && \
+    cargo build --target wasm32-unknown-emscripten --release
+
+# Runtime stage - much smaller image
+FROM debian:bookworm-slim
+
+# Install only runtime dependencies
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy built artifacts from builder stage
+COPY --from=builder /build/target/release/libpg_parse.* /usr/local/lib/
+COPY --from=builder /build/target/wasm32-unknown-emscripten/release/*.wasm /usr/local/lib/wasm/
+
+WORKDIR /app

@@ -1,0 +1,20 @@
+[package]
+name                 = "pg_proto_parser"
+authors.workspace    = true
+categories.workspace = true
+description          = "An opiniated parser for the Postgres .proto file"
+edition.workspace    = true
+homepage.workspace   = true
+keywords.workspace   = true
+license.workspace    = true
+repository.workspace = true
+version              = "0.0.0"
+
+
+[dependencies]
+convert_case   = "0.6.0"
+protobuf       = "3.3.0"
+protobuf-parse = "3.3.0"
+
+
+
