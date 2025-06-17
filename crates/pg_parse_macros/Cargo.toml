@@ -13,6 +13,9 @@ version              = "0.0.0"
 [dependencies]
 proc-macro2.workspace = true
 quote.workspace       = true
+prost-reflect = { workspace = true }
+protox = { workspace = true }
+convert_case   = { workspace = true }
 
 pg_proto_parser.workspace = true
 

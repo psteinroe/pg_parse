@@ -17,6 +17,9 @@ thiserror = "1.0.31"
 prost = "0.13.5"
 proc-macro2              = "1.0.66"
 quote                    = "1.0.33"
+prost-reflect = "0.15.3"
+protox = "0.8.0"
+convert_case   = "0.6.0"
 
 pg_parse                = { path = "./crates/pg_parse", version = "0.0.0" }
 pg_parse_macros                = { path = "./crates/pg_parse_macros", version = "0.0.0" }
