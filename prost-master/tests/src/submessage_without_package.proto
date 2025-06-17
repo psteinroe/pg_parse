@@ -1,8 +1,0 @@
-syntax = "proto3";
-
-message M {
-  message SubMessage {
-    map<string, string> item = 1;
-  }
-  SubMessage reply = 2;
-}
