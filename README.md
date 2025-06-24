@@ -2,6 +2,8 @@
 
 Alternative Rust binding for libpg_query. It uses the actual Postgres server source to parse SQL queries and return the internal parse tree.
 
+> This is *not* a drop-in replacement for the official Rust binding. The generated iterators allows the user to implement a large part of the `ParseResult` API themselves easily. This library just exposes a minimal API meant to be extended on depending on the individual use case.
+
 ## Features
 - *AST*: Parses Postgres queries into an abstract syntax tree (AST)
 - *Multi-version*: Supports multiple Postgres versions at build time
@@ -18,7 +20,6 @@ There already is an official Rust binding for libpg_query, so why creating a new
 - *WASM support*: You can use this library and still build your application to WASM using the `wasm32-unknown-emscripten` target. You can find a full example in `wasm_example/`. We run a build in the CI to make sure it remains compatible.
 - *Macro-based iterators*: The official Rust binding implements the iterator for AST nodes manually and therefore misses a large part. This implementation uses the `.proto` definition to generate the code at build time using procedural macros.
 
-> This is *not* a drop-in replacement for the official Rust binding. The generated iterators allows the user to implement a large part of the `ParseResult` API themselves easily. This library just exposes a minimal API meant to be extended on depending on the individual use case.
 
 ## Related
 
