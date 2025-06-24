@@ -1,4 +1,4 @@
-# pg-parse
+# pg_parse
 
 Alternative Rust binding for libpg_query. It uses the actual Postgres server source to parse SQL queries and return the internal parse tree.
 
@@ -20,4 +20,8 @@ There already is an official Rust binding for libpg_query, so why creating a new
 
 > This is *not* a drop-in replacement for the official Rust binding. The generated iterators allows the user to implement a large part of the `ParseResult` API themselves easily. This library just exposes a minimal API meant to be extended on depending on the individual use case.
 
+## Related
+
+- [libpg_query](https://github.com/pganalyze/libpg_query): C library for accessing the PostgreSQL parser outside of the server.
+- [pg_query.rs](https://github.com/pganalyze/pg_query.rs): Official Rust binding
 
