@@ -1,0 +1,20 @@
+[package]
+name = "pg_parse_wasm"
+version = "0.0.0"
+edition = "2021"
+description = "WebAssembly bindings for pg_parse"
+
+[lib]
+name = "pg_parse_wasm"
+crate-type = ["staticlib"]
+
+[dependencies]
+pg_parse = { path = "../crates/pg_parse" }
+
+[dependencies.wasm-bindgen]
+version = "0.2"
+optional = true
+
+[features]
+default = []
+wasm-bindgen = ["dep:wasm-bindgen"]

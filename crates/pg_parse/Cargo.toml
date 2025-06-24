@@ -10,7 +10,6 @@ license.workspace    = true
 repository.workspace = true
 version              = "0.0.0"
 
-
 [dependencies]
 thiserror = { workspace = true }
 prost = { workspace = true }
@@ -18,11 +17,21 @@ prost = { workspace = true }
 pg_parse_macros = { workspace = true }
 
 
+[features]
+default = ["postgres-17"]
+postgres-15 = []
+postgres-16 = []
+postgres-17 = []
+
 [build-dependencies]
 bindgen = "0.72.0"
 prost-build = "0.13.5"
 fs_extra = "1.2.0"
 cc = "1.0.83"
 glob = "0.3.1"
+which = "6.0.0"
 clippy = { version = "0.0.302", optional = true }
+
+[dev-dependencies]
+easy-parallel = "3.2.0"
 

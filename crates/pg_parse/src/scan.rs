@@ -10,7 +10,7 @@ use prost::Message;
 ///
 /// # Example
 ///
-/// ```rust,ignore
+/// ```rust
 /// let result = pg_parse::scan("SELECT * FROM contacts");
 /// assert!(result.is_ok());
 /// ```

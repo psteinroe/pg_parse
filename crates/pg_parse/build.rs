@@ -9,12 +9,20 @@ use std::process::Command;
 
 static LIBRARY_NAME: &str = "pg_query";
 static LIBPG_QUERY_REPO: &str = "https://github.com/pganalyze/libpg_query.git";
-static LIBPG_QUERY_TAG: &str = "17-6.1.0"; // You can make this configurable later
+fn get_libpg_query_tag() -> &'static str {
+    #[cfg(feature = "postgres-15")]
+    return "15-5.3.0";
+    #[cfg(feature = "postgres-16")]
+    return "16-6.1.0";
+    #[cfg(feature = "postgres-17")]
+    return "17-6.1.0";
+}
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let libpg_query_tag = get_libpg_query_tag();
     let out_dir = PathBuf::from(env::var("OUT_DIR")?);
     let vendor_dir = out_dir.join("vendor");
-    let libpg_query_dir = vendor_dir.join("libpg_query").join(LIBPG_QUERY_TAG);
+    let libpg_query_dir = vendor_dir.join("libpg_query").join(libpg_query_tag);
     let stamp_file = libpg_query_dir.join(".stamp");
 
     let src_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR")?).join("src");
@@ -27,7 +35,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Clone libpg_query if not already present
     if !stamp_file.exists() {
-        println!("cargo:warning=Cloning libpg_query {}", LIBPG_QUERY_TAG);
+        println!("cargo:warning=Cloning libpg_query {}", libpg_query_tag);
 
         // Create vendor directory
         std::fs::create_dir_all(&vendor_dir)?;
@@ -39,7 +47,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 "--depth",
                 "1",
                 "--branch",
-                LIBPG_QUERY_TAG,
+                libpg_query_tag,
                 LIBPG_QUERY_REPO,
                 libpg_query_dir.to_str().unwrap(),
             ])
@@ -121,57 +129,104 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Generate bindings for Rust
     let mut bindgen_builder = bindgen::Builder::default()
         .header(out_header_path.to_str().ok_or("Invalid header path")?)
-        // Disable layout tests as they can fail with different pointer sizes
-        .layout_tests(false)
-        // Whitelist only the functions we need
+        // Allowlist only the functions we need
         .allowlist_function("pg_query_parse_protobuf")
         .allowlist_function("pg_query_scan")
+        .allowlist_function("pg_query_deparse_protobuf")
+        .allowlist_function("pg_query_normalize")
+        .allowlist_function("pg_query_fingerprint")
+        .allowlist_function("pg_query_split_with_parser")
+        .allowlist_function("pg_query_split_with_scanner")
         .allowlist_function("pg_query_free_protobuf_parse_result")
         .allowlist_function("pg_query_free_scan_result")
-        // Whitelist the types used by these functions
+        .allowlist_function("pg_query_free_deparse_result")
+        .allowlist_function("pg_query_free_normalize_result")
+        .allowlist_function("pg_query_free_fingerprint_result")
+        .allowlist_function("pg_query_free_split_result")
+        // Allowlist the types used by these functions
         .allowlist_type("PgQueryProtobufParseResult")
         .allowlist_type("PgQueryScanResult")
         .allowlist_type("PgQueryError")
         .allowlist_type("PgQueryProtobuf")
+        .allowlist_type("PgQueryDeparseResult")
+        .allowlist_type("PgQueryNormalizeResult")
+        .allowlist_type("PgQueryFingerprintResult")
+        .allowlist_type("PgQuerySplitResult")
+        .allowlist_type("PgQuerySplitStmt")
         // Also generate bindings for size_t since it's used in PgQueryProtobuf
-        .allowlist_type("size_t");
+        .allowlist_type("size_t")
+        .allowlist_var("PG_VERSION_NUM");
 
     // Configure bindgen for Emscripten target
     if is_emscripten {
         // Tell bindgen to generate bindings for the wasm32 target
         bindgen_builder = bindgen_builder.clang_arg("--target=wasm32-unknown-emscripten");
 
-        // Use emcc to get the proper include paths
-        let emcc_output = Command::new("emcc").args(["-print-search-dirs"]).output();
-
-        if let Ok(output) = emcc_output {
-            let output_str = String::from_utf8_lossy(&output.stdout);
-            for line in output_str.lines() {
-                if line.starts_with("libraries: =") {
-                    let lib_path = line.strip_prefix("libraries: =").unwrap_or("");
-                    // Add system includes relative to emcc
-                    bindgen_builder = bindgen_builder.clang_arg(format!("-I{}/include", lib_path));
-                }
-            }
+        // Add emscripten sysroot includes
+        // First try to use EMSDK environment variable (set in CI and when sourcing emsdk_env.sh)
+        if let Ok(emsdk) = env::var("EMSDK") {
+            bindgen_builder = bindgen_builder.clang_arg(format!(
+                "-I{}/upstream/emscripten/cache/sysroot/include",
+                emsdk
+            ));
+        } else {
+            // Fallback to the default path if EMSDK is not set
+            bindgen_builder =
+                bindgen_builder.clang_arg("-I/emsdk/upstream/emscripten/cache/sysroot/include");
         }
 
-        // Also try the homebrew installation path
-        let homebrew_emscripten = PathBuf::from("/opt/homebrew/Cellar/emscripten")
-            .join("4.0.10")
-            .join("libexec")
-            .join("cache")
-            .join("sysroot")
-            .join("include");
-        if homebrew_emscripten.exists() {
-            bindgen_builder =
-                bindgen_builder.clang_arg(format!("-I{}", homebrew_emscripten.display()));
+        // Ensure we have the basic C standard library headers
+        bindgen_builder = bindgen_builder.clang_arg("-D__EMSCRIPTEN__");
+
+        // Use environment variable if set (from our justfile)
+        if let Ok(extra_args) = env::var("BINDGEN_EXTRA_CLANG_ARGS") {
+            for arg in extra_args.split_whitespace() {
+                bindgen_builder = bindgen_builder.clang_arg(arg);
+            }
         }
     }
 
-    bindgen_builder
+    let bindings = bindgen_builder
         .generate()
-        .map_err(|_| "Unable to generate bindings")?
-        .write_to_file(src_dir.join("bindings.rs"))?;
+        .map_err(|_| "Unable to generate bindings")?;
+
+    let bindings_path = src_dir.join("bindings.rs");
+    bindings.write_to_file(&bindings_path)?;
+
+    // For WASM/emscripten builds, manually add the function declarations
+    // since bindgen sometimes misses them due to preprocessor conditions
+    if is_emscripten {
+        let mut bindings_content = std::fs::read_to_string(&bindings_path)?;
+
+        // Check if we need to add the extern "C" block
+        if !bindings_content.contains("extern \"C\"") {
+            bindings_content.push_str("\nextern \"C\" {\n");
+            bindings_content.push_str("    pub fn pg_query_scan(input: *const ::std::os::raw::c_char) -> PgQueryScanResult;\n");
+            bindings_content.push_str("    pub fn pg_query_parse_protobuf(input: *const ::std::os::raw::c_char) -> PgQueryProtobufParseResult;\n");
+            bindings_content.push_str("    pub fn pg_query_deparse_protobuf(protobuf: PgQueryProtobuf) -> PgQueryDeparseResult;\n");
+            bindings_content.push_str("    pub fn pg_query_normalize(input: *const ::std::os::raw::c_char) -> PgQueryNormalizeResult;\n");
+            bindings_content.push_str("    pub fn pg_query_fingerprint(input: *const ::std::os::raw::c_char) -> PgQueryFingerprintResult;\n");
+            bindings_content.push_str("    pub fn pg_query_split_with_parser(input: *const ::std::os::raw::c_char) -> PgQuerySplitResult;\n");
+            bindings_content.push_str("    pub fn pg_query_split_with_scanner(input: *const ::std::os::raw::c_char) -> PgQuerySplitResult;\n");
+            bindings_content
+                .push_str("    pub fn pg_query_free_scan_result(result: PgQueryScanResult);\n");
+            bindings_content.push_str("    pub fn pg_query_free_protobuf_parse_result(result: PgQueryProtobufParseResult);\n");
+            bindings_content.push_str(
+                "    pub fn pg_query_free_deparse_result(result: PgQueryDeparseResult);\n",
+            );
+            bindings_content.push_str(
+                "    pub fn pg_query_free_normalize_result(result: PgQueryNormalizeResult);\n",
+            );
+            bindings_content.push_str(
+                "    pub fn pg_query_free_fingerprint_result(result: PgQueryFingerprintResult);\n",
+            );
+            bindings_content
+                .push_str("    pub fn pg_query_free_split_result(result: PgQuerySplitResult);\n");
+            bindings_content.push_str("}\n");
+
+            std::fs::write(&bindings_path, bindings_content)?;
+        }
+    }
 
     let protoc_exists = Command::new("protoc").arg("--version").status().is_ok();
     if protoc_exists {

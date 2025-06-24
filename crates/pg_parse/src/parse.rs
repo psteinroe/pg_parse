@@ -12,13 +12,12 @@ use prost::Message;
 /// # Example
 ///
 /// ```rust
-/// use pg_query::{Node, NodeEnum, NodeRef};
+/// use pg_parse::parse;
 ///
-/// let result = pg_query::parse("SELECT * FROM contacts");
+/// let result = parse("SELECT * FROM contacts");
 /// assert!(result.is_ok());
 /// let result = result.unwrap();
-/// assert_eq!(result.tables(), vec!["contacts"]);
-/// assert!(matches!(result.protobuf.nodes()[0].0, NodeRef::SelectStmt(_)));
+/// assert_eq!(result.protobuf.stmts.len(), 1);
 /// ```
 pub fn parse(statement: &str) -> Result<ParseResult> {
     let input = CString::new(statement)?;
@@ -47,6 +46,7 @@ pub fn parse(statement: &str) -> Result<ParseResult> {
 }
 
 /// The result of parsing a SQL query
+#[derive(Debug)]
 pub struct ParseResult {
     /// The parsed protobuf result
     pub protobuf: protobuf::ParseResult,
@@ -71,23 +71,53 @@ impl ParseResult {
         Self { protobuf, warnings }
     }
 
-    pub fn root(&self) -> Result<&NodeEnum> {
-        // Check if we have exactly one statement
+    pub fn deparse(&self) -> Result<String> {
+        crate::deparse(&self.protobuf)
+    }
+
+    pub fn stmts(&self) -> Vec<&NodeEnum> {
+        self.protobuf
+            .stmts
+            .iter()
+            .filter_map(|s| s.stmt.as_ref().and_then(|s| s.node.as_ref()))
+            .collect()
+    }
+
+    pub fn stmts_mut(&mut self) -> Vec<&mut NodeEnum> {
+        self.protobuf
+            .stmts
+            .iter_mut()
+            .filter_map(|s| s.stmt.as_mut().and_then(|s| s.node.as_mut()))
+            .collect()
+    }
+
+    /// Returns the root node of the parse tree.
+    ///
+    /// Returns None if there is not exactly one statement in the parse result.
+    pub fn root(&self) -> Option<&NodeEnum> {
         if self.protobuf.stmts.len() != 1 {
-            return Err(Error::Parse(format!(
-                "Expected exactly one statement, found {}",
-                self.protobuf.stmts.len()
-            )));
+            return None;
         }
 
         // Get the first (and only) statement
         let raw_stmt = &self.protobuf.stmts[0];
 
         // Navigate: RawStmt -> Node -> NodeEnum
-        raw_stmt
-            .stmt
-            .as_ref()
-            .and_then(|stmt| stmt.node.as_ref())
-            .ok_or_else(|| Error::Parse("Statement contains no node".to_string()))
+        raw_stmt.stmt.as_ref().and_then(|stmt| stmt.node.as_ref())
+    }
+
+    /// Returns a mutable reference to the root node of the parse tree.
+    ///
+    /// Returns None if there is not exactly one statement in the parse result.
+    pub fn root_mut(&mut self) -> Option<&mut NodeEnum> {
+        if self.protobuf.stmts.len() != 1 {
+            return None;
+        }
+
+        // Get the first (and only) statement
+        let raw_stmt = &mut self.protobuf.stmts[0];
+
+        // Navigate: RawStmt -> Node -> NodeEnum
+        raw_stmt.stmt.as_mut().and_then(|stmt| stmt.node.as_mut())
     }
 }

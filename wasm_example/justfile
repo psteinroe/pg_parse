@@ -1,0 +1,44 @@
+# Default recipe to display help
+default:
+    @just --list
+
+# Build WASM static library with Emscripten bindings (Docker)
+build:
+    docker-compose -f ../docker-compose.yml run --rm --user root pg-parse-dev bash -c "chown -R developer:developer /home/developer/.cargo /workspace/target 2>/dev/null || true && su - developer -c 'cd /workspace/wasm_example && source /emsdk/emsdk_env.sh && cargo build --target wasm32-unknown-emscripten --lib'"
+    @echo "✅ WASM static library build complete!"
+    @echo "Static library: target/wasm32-unknown-emscripten/debug/libpg_parse_wasm.a"
+
+# Build complete WASM module with C wrapper (Docker)
+build-complete: build
+    docker-compose -f ../docker-compose.yml run --rm --user root pg-parse-dev bash -c 'chown -R developer:developer /home/developer/.cargo /workspace/target 2>/dev/null || true && chmod +x /workspace/wasm_example/build_wasm.sh && su - developer -c "/workspace/wasm_example/build_wasm.sh"'
+    @echo "✅ WASM build complete!"
+    @echo "WASM file: target/pg_parse_wasm.wasm"
+    @echo "JS file: target/pg_parse_wasm.js"
+
+# Test WASM module with Node.js (Docker)
+test: build-complete
+    @echo "Testing WASM module with Node.js..."
+    docker-compose -f ../docker-compose.yml run --rm pg-parse-dev bash -c "cd /workspace/wasm_example && node wasm_test.js"
+
+# Build WASM static library with native Emscripten (for CI)
+build-native:
+    cargo build --target wasm32-unknown-emscripten --lib
+    @echo "✅ WASM static library build complete!"
+    @echo "Static library: target/wasm32-unknown-emscripten/debug/libpg_parse_wasm.a"
+
+# Build complete WASM module with native Emscripten (for CI)
+build-complete-native: build-native
+    chmod +x build_wasm_native.sh
+    ./build_wasm_native.sh
+    @echo "✅ WASM build complete!"
+    @echo "WASM file: target/pg_parse_wasm.wasm"
+    @echo "JS file: target/pg_parse_wasm.js"
+
+# Test WASM module with native Node.js (for CI)
+test-native: build-complete-native
+    @echo "Testing WASM module with Node.js..."
+    node wasm_test.js
+
+# Clean build artifacts
+clean:
+    rm -rf target/

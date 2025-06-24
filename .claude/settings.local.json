@@ -8,7 +8,15 @@
       "Bash(find:*)",
       "Bash(grep:*)",
       "Bash(rg:*)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(gh repo view:*)",
+      "Bash(git push:*)",
+      "Bash(gh repo edit:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(git branch:*)",
+      "Bash(rustc:*)",
+      "Bash(./test_iterator)",
+      "Bash(ls:*)"
     ],
     "deny": []
   }
