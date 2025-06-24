@@ -16,6 +16,10 @@ impl NodeMut {
         })
     }
 
+    pub fn nodes_mut(&self) -> Vec<NodeMut> {
+        self.iter_mut().collect()
+    }
+
     pub fn iter_mut(&self) -> NodeMutIterator {
         NodeMutIterator::new(*self)
     }
