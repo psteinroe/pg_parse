@@ -24,4 +24,5 @@ There already is an official Rust binding for libpg_query, so why creating a new
 
 - [libpg_query](https://github.com/pganalyze/libpg_query): C library for accessing the PostgreSQL parser outside of the server.
 - [pg_query.rs](https://github.com/pganalyze/pg_query.rs): Official Rust binding
+- [pg-parser](https://github.com/supabase-community/pg-parser): WASM-based Node binding from which I learned a lot
 
